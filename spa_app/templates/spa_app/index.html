@@ -1,0 +1,540 @@
+{% load static l10n %}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mộc Spa - Đánh thức vẻ đẹp tự nhiên</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'spa_app/css/styles.css' %}">
+</head>
+
+<body class="has-local-bg">
+    <header class="navbar">
+        <div class="logo-container">
+            <div class="logo-circle">
+                <span>Mộc Spa</span>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#">Trang chủ</a></li>
+                <li><a href="#services">Dịch vụ</a></li>
+                <li><a href="#bookingSummary">Đặt lịch</a></li>
+                <li><a href="{% url 'manage_services' %}">Quản lý</a></li>
+                <li><a href="#contact">Liên hệ</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Đánh thức vẻ đẹp tự nhiên của bạn</h1>
+            <p>Chào mừng bạn đã đến với Mộc Spa</p>
+            <a href="#services" class="btn-primary">Đặt lịch ngay</a>
+        </div>
+    </section>
+
+    <main id="services">
+        <h2 class="section-title">Dịch vụ của chúng tôi</h2>
+        <div class="container">
+            <div class="content-wrapper">
+                <div class="services-grid">
+                    {% for category in categories %}
+                    <div class="category-section">
+                        <h3>{{ category.name }}</h3>
+                        <div class="cards-container">
+                            {% for service in category.services.all %}
+                            <div class="service-card" data-id="{{ service.id }}" data-name="{{ service.name|escapejs }}"
+                                data-price="{{ service.price|unlocalize }}" data-duration="{{ service.duration }}">
+                                <div class="card-image">
+                                    {% if service.image %}
+                                    <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                                    {% else %}
+                                    <img src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&q=80&w=400"
+                                        alt="Spa">
+                                    {% endif %}
+                                </div>
+                                <div class="card-info">
+                                    <h4>{{ service.name }}</h4>
+                                    <p>{{ service.description }}</p>
+                                    <div class="card-footer">
+                                        <span class="price">{{ service.price|floatformat:0 }} VNĐ</span>
+                                        <button class="btn-select">Chọn gói</button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <aside class="booking-summary" id="bookingSummary">
+                    <div class="summary-card">
+                        <h3>🧾 Thông Tin Liệu Trình</h3>
+                        <div id="summaryContent" class="hidden">
+                            <div class="booking-inputs">
+                                <div class="sum-form-group">
+                                    <label>Họ và tên người đặt</label>
+                                    <select id="bookerName">
+                                        <option value="">-- chọn người đặt đơn --</option>
+                                        <option value="chị Nhi">chị Nhi</option>
+                                        <option value="Nơ">Nơ</option>
+                                        <option value="Wuây">Wuây</option>
+                                    </select>
+                                </div>
+                                <div class="sum-form-group">
+                                    <label>Giảm giá (%)</label>
+                                    <input type="number" id="discountPercent" value="0" min="0" max="100"
+                                        oninput="updateSummary()">
+                                </div>
+                                <div class="sum-form-group">
+                                    <label>Họ và tên khách hàng</label>
+                                    <input type="text" id="customerName" placeholder="Nhập tên khách hàng">
+                                </div>
+                                <div class="sum-form-group">
+                                    <label>Sản phẩm/Mỹ phẩm (nếu có)</label>
+                                    <input type="text" id="productName" placeholder="Tên sản phẩm"
+                                        oninput="updateSummary()">
+                                </div>
+                                <div class="sum-form-group">
+                                    <label>Giá sản phẩm (VNĐ)</label>
+                                    <input type="number" id="productPrice" value="0" min="0" oninput="updateSummary()">
+                                </div>
+                                <div class="sum-form-group">
+                                    <label>Giảm giá SP (%)</label>
+                                    <input type="number" id="productDiscountPercent" value="0" min="0" max="100"
+                                        oninput="updateSummary()">
+                                </div>
+                            </div>
+                            <hr>
+                            <div id="selectedServicesList">
+                                <!-- Dynamic List -->
+                            </div>
+                            <hr>
+                            <p><strong>Tổng thời gian:</strong> <span id="sumDuration">0</span> phút</p>
+                            <p class="total"><strong>Tổng cộng:</strong> <span id="sumTotal">0 VNĐ</span></p>
+                            <button class="btn-confirm" onclick="confirmBooking()">Xác nhận đặt lịch</button>
+                        </div>
+                        <p id="summaryPlaceholder">Vui lòng chọn các gói dịch vụ để xem chi tiết.</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+        <section id="contact" class="contact-section">
+            <h2 class="section-title">Liên hệ với chúng tôi</h2>
+            <div class="container">
+                <div class="contact-wrapper">
+                    <div class="contact-info">
+                        <div class="info-card">
+                            <h3>📍 Địa chỉ</h3>
+                            <p>{{ contact.address|default:"25 Lê Lợi, Thị trấn Khe Sanh, Hướng Hóa, Tỉnh Quảng Trị" }}
+                            </p>
+                        </div>
+                        <div class="info-card">
+                            <h3>📞 Điện thoại</h3>
+                            <p>{{ contact.phone|default:"0962 176 994" }}</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>✉️ Email</h3>
+                            <p>{{ contact.email|default:"lenhi2408@gmail.com" }}</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>🌐 Facebook</h3>
+                            <p>
+                                {% if contact.facebook_url %}
+                                <a href="{{ contact.facebook_url }}" target="_blank"
+                                    style="text-decoration: none; color: inherit;">
+                                    {{ contact.facebook_name|default:"Nhii Lê" }}
+                                </a>
+                                {% else %}
+                                <a href="https://www.facebook.com/share/1CMBCBMoAv/?mibextid=wwXIfr" target="_blank"
+                                    style="text-decoration: none; color: inherit;">
+                                    Nhii Lê
+                                </a>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="info-card">
+                            <h3>⏰ Giờ mở cửa</h3>
+                            <p>{{ contact.working_hours|default:"Thứ 2 - Chủ Nhật: 08:00 - 20:00" }}</p>
+                        </div>
+                    </div>
+                    <div class="contact-form-container">
+                        <form class="contact-form">
+                            <div class="form-group">
+                                <input type="text" placeholder="Họ và tên" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" placeholder="Email" required>
+                            </div>
+                            <div class="form-group">
+                                <textarea placeholder="Tin nhắn của bạn" rows="5" required></textarea>
+                            </div>
+                            <button type="button" class="btn-primary"
+                                onclick="alert('Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất.')">Gửi lời
+                                nhắn</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="map-container">
+                    <iframe
+                        src="https://maps.google.com/maps?q=25%20Lê%20Lợi,%20Thị%20trấn%20Khe%20Sanh,%20Hướng%20Hóa,%20Quảng%20Trị&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                        width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </section>
+
+        <div id="invoiceOverlay" class="overlay hidden">
+            <div class="invoice-card">
+                <div class="invoice-header-area">
+                    <h3 id="checkoutTitle">THANH TOÁN ĐƠN HÀNG</h3>
+                </div>
+
+                <div class="invoice-split-container">
+                    <!-- Left Column: Invoice Preview -->
+                    <div class="invoice-preview-col">
+                        <div class="invoice-preview-content" id="invoicePreview">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Payment & Controls -->
+                    <div class="payment-control-col">
+                        <div class="payment-selection-content">
+                            <div id="paymentSelection">
+                                <h4 style="margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                                    💳 PHƯƠNG THỨC THANH TOÁN</h4>
+                                <div class="payment-methods">
+                                    <button onclick="selectPayment('cash')" class="btn-payment">
+                                        <span class="icon">💵</span> Tiền mặt
+                                    </button>
+                                    <button onclick="selectPayment('transfer')" class="btn-payment">
+                                        <span class="icon">📱</span> Chuyển khoản
+                                    </button>
+                                </div>
+
+                                <div id="cashInputArea" class="payment-detail hidden">
+                                    <div class="sum-form-group">
+                                        <label>Số tiền khách đưa (VNĐ)</label>
+                                        <input type="number" id="cashReceived" placeholder="Ví dụ: 500000"
+                                            oninput="calculateChange()">
+                                    </div>
+                                    <p><strong>Tiền thối lại:</strong> <span id="cashChange">0 VNĐ</span></p>
+                                    <button onclick="processPayment('cash')" class="btn-action primary full-width">Xác
+                                        nhận thanh
+                                        toán & In hóa đơn</button>
+                                </div>
+
+                                <div id="transferArea" class="payment-detail hidden">
+                                    <div class="qr-container">
+                                        {% if contact.qr_code %}
+                                        <img src="{{ contact.qr_code.url }}" alt="QR Code Payment" class="qr-image">
+                                        {% else %}
+                                        <div class="qr-placeholder">
+                                            <p>Chưa có mã QR.</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-center" style="font-size: 0.85rem; margin-bottom: 1rem;">Quét mã QR
+                                        để chuyển khoản</p>
+                                    <button onclick="processPayment('transfer')"
+                                        class="btn-action primary full-width">Đã nhận được
+                                        tiền & In hóa đơn</button>
+                                </div>
+                            </div>
+
+                            <div id="finalInvoiceActions" class="hidden">
+                                <h4
+                                    style="margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                                    ✅ HOÀN TẤT ĐƠN HÀNG</h4>
+                                <div class="invoice-actions no-print">
+                                    <button onclick="window.print()" class="btn-action full-width">
+                                        <i class="fas fa-print"></i> In hóa đơn
+                                    </button>
+                                    <button onclick="location.reload()" class="btn-action primary full-width">
+                                        <i class="fas fa-check-circle"></i> Hoàn tất giao dịch
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="invoice-footer-area no-print">
+                    <div class="invoice-actions" style="flex-direction: row; justify-content: flex-end; gap: 10px;">
+                        <button onclick="cancelBooking()" class="btn-action danger"
+                            style="padding: 0.7rem 1.5rem; border-radius: 8px;">Hủy đặt lịch</button>
+                        <button onclick="closeInvoice()" class="btn-action"
+                            style="padding: 0.7rem 1.5rem; border-radius: 8px;">Quay lại</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentInvoiceData = null;
+            let selectedServices = [];
+
+            document.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('.service-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const id = card.getAttribute('data-id');
+                        const name = card.getAttribute('data-name');
+                        const price = parseFloat(card.getAttribute('data-price'));
+                        const duration = parseInt(card.getAttribute('data-duration'));
+                        toggleService(id, name, price, duration, card);
+                    });
+                });
+            });
+
+            function toggleService(id, name, price, duration, element) {
+                const index = selectedServices.findIndex(s => s.id === id);
+                if (index > -1) {
+                    selectedServices.splice(index, 1);
+                    element.classList.remove('selected');
+                } else {
+                    selectedServices.push({ id, name, price, duration });
+                    element.classList.add('selected');
+                }
+                updateSummary();
+            }
+
+            function updateSummary() {
+                const list = document.getElementById('selectedServicesList');
+                const content = document.getElementById('summaryContent');
+                const placeholder = document.getElementById('summaryPlaceholder');
+                const productName = document.getElementById('productName').value.trim();
+
+                if (selectedServices.length === 0 && productName === "") {
+                    content.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                    return;
+                }
+
+                content.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+
+                list.innerHTML = selectedServices.map(s => `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        <span>${s.name}</span>
+                        <span>${s.price.toLocaleString('vi-VN')} VNĐ</span>
+                    </div>
+                `).join('');
+
+                const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration, 0);
+                const basePrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+                const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+                const productPrice = parseFloat(document.getElementById('productPrice').value) || 0;
+                const productDiscountPercent = parseFloat(document.getElementById('productDiscountPercent').value) || 0;
+
+                const serviceTotal = basePrice * (1 - discountPercent / 100);
+                const productTotal = productPrice * (1 - productDiscountPercent / 100);
+                const totalPrice = serviceTotal + productTotal;
+
+                document.getElementById('sumDuration').innerText = totalDuration;
+                document.getElementById('sumTotal').innerText = totalPrice.toLocaleString('vi-VN') + " VNĐ";
+            }
+
+            async function confirmBooking() {
+                try {
+                    const productName = document.getElementById('productName').value.trim();
+                    if (selectedServices.length === 0 && productName === "") {
+                        alert('Vui lòng chọn dịch vụ hoặc nhập sản phẩm.');
+                        return;
+                    }
+
+                    const bookerName = document.getElementById('bookerName').value;
+                    const customerName = document.getElementById('customerName').value;
+                    const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+
+                    if (!bookerName) {
+                        alert('Vui lòng chọn người đặt lịch.');
+                        return;
+                    }
+
+                    if (!customerName.trim()) {
+                        alert('Vui lòng nhập họ và tên khách hàng.');
+                        return;
+                    }
+
+                    const serviceIds = selectedServices.map(s => s.id);
+
+                    const response = await fetch('/confirm_booking/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            service_ids: serviceIds,
+                            booker_name: bookerName,
+                            customer_name: customerName,
+                            discount_percent: discountPercent,
+                            product_name: document.getElementById('productName').value || '',
+                            product_price: parseFloat(document.getElementById('productPrice').value) || 0,
+                            product_discount_percent: parseFloat(document.getElementById('productDiscountPercent').value) || 0
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Lỗi từ máy chủ: ' + response.status);
+                    }
+
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        currentInvoiceData = data.invoice;
+
+                        // Initial Invoice Preview Render (Left Side)
+                        renderInvoicePreview();
+
+                        // Reset Right Side (Payment Controls)
+                        document.getElementById('checkoutTitle').innerText = "THANH TOÁN ĐƠN HÀNG";
+                        document.getElementById('paymentSelection').classList.remove('hidden');
+                        document.getElementById('finalInvoiceActions').classList.add('hidden');
+                        document.getElementById('cashInputArea').classList.add('hidden');
+                        document.getElementById('transferArea').classList.add('hidden');
+
+                        document.getElementById('invoiceOverlay').classList.remove('hidden');
+                    } else {
+                        alert('Đã xảy ra lỗi: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error confirming booking:', error);
+                    alert('Đã xảy ra lỗi khi đặt lịch: ' + error.message);
+                }
+            }
+
+            function selectPayment(method) {
+                document.getElementById('cashInputArea').classList.add('hidden');
+                document.getElementById('transferArea').classList.add('hidden');
+
+                if (method === 'cash') {
+                    document.getElementById('cashInputArea').classList.remove('hidden');
+                } else if (method === 'transfer') {
+                    document.getElementById('transferArea').classList.remove('hidden');
+                }
+            }
+
+            function calculateChange() {
+                if (!currentInvoiceData) return;
+                const totalText = currentInvoiceData.total.replace(/[., VNĐ]/g, '');
+                const total = parseInt(totalText);
+                const received = parseInt(document.getElementById('cashReceived').value) || 0;
+                const change = received - total;
+                document.getElementById('cashChange').innerText = (change > 0 ? change.toLocaleString('vi-VN') : 0) + " VNĐ";
+            }
+
+            function renderInvoicePreview(paymentInfoHtml = '') {
+                if (!currentInvoiceData) return;
+
+                let invoiceRows = currentInvoiceData.services.map(s => `
+                    <tr><td>${s.name}</td><td>${s.price}</td></tr>
+                `).join('');
+
+                const previewContent = `
+                    <div class="invoice-header">
+                        <p><strong>Mã hóa đơn:</strong> ${currentInvoiceData.id}</p>
+                        <p><strong>Người đặt:</strong> ${currentInvoiceData.booker_name}</p>
+                        <p><strong>Khách hàng:</strong> ${currentInvoiceData.customer_name}</p>
+                        <p><strong>Ngày:</strong> ${currentInvoiceData.date}</p>
+                    </div>
+                    <div class="invoice-details">
+                        <p><strong>Danh sách dịch vụ:</strong> ${currentInvoiceData.service_names}</p>
+                        <p><strong>Tổng thời gian:</strong> ${currentInvoiceData.duration}</p>
+                    </div>
+                    <table class="invoice-table">
+                        <thead>
+                            <tr><th>Nội dung</th><th>Số tiền</th></tr>
+                        </thead>
+                        <tbody>
+                            ${invoiceRows}
+                            <tr><td>Giảm giá DV</td><td>-${currentInvoiceData.discount_amount} (${currentInvoiceData.discount_percent}%)</td></tr>
+                            ${currentInvoiceData.product_name ? `<tr><td>Sản phẩm: ${currentInvoiceData.product_name}</td><td>${currentInvoiceData.product_price}</td></tr>` : ''}
+                            ${currentInvoiceData.product_discount_percent > 0 ? `<tr><td>Giảm giá SP</td><td>-${currentInvoiceData.product_discount_amount} (${currentInvoiceData.product_discount_percent}%)</td></tr>` : ''}
+                            <tr class="row-total"><td>Tổng cộng</td><td>${currentInvoiceData.total}</td></tr>
+                            ${paymentInfoHtml}
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('invoicePreview').innerHTML = previewContent;
+            }
+
+            async function processPayment(method) {
+                if (!currentInvoiceData) return;
+
+                // Update status on server
+                try {
+                    const response = await fetch('/finalize_payment/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({
+                            booking_id: currentInvoiceData.booking_id,
+                            method: method
+                        })
+                    });
+
+                    if (!response.ok) console.error('Failed to finalize payment on server');
+                } catch (error) {
+                    console.error('Error finalizing payment:', error);
+                }
+
+                let paymentInfoHtml = '';
+                if (method === 'cash') {
+                    const received = parseInt(document.getElementById('cashReceived').value) || 0;
+                    const totalText = currentInvoiceData.total.replace(/[., VNĐ]/g, '');
+                    const total = parseInt(totalText);
+
+                    if (received < total) {
+                        alert('Số tiền khách đưa chưa đủ!');
+                        return;
+                    }
+
+                    const change = received - total;
+                    paymentInfoHtml = `
+                        <tr><td>HT Thanh toán</td><td>Tiền mặt</td></tr>
+                        <tr><td>Tiền khách đưa</td><td>${received.toLocaleString('vi-VN')} VNĐ</td></tr>
+                        <tr><td>Tiền thối lại</td><td>${change.toLocaleString('vi-VN')} VNĐ</td></tr>
+                    `;
+                } else {
+                    paymentInfoHtml = `
+                        <tr><td>HT Thanh toán</td><td>Chuyển khoản</td></tr>
+                        <tr><td>Trạng thái</td><td>Đã nhận được tiền</td></tr>
+                    `;
+                }
+
+                // Update the static preview on the left with payment details
+                renderInvoicePreview(paymentInfoHtml);
+
+                // Switch UI on the right
+                document.getElementById('checkoutTitle').innerText = "HOÀN TẤT GIAO DỊCH";
+                document.getElementById('paymentSelection').classList.add('hidden');
+                document.getElementById('finalInvoiceActions').classList.remove('hidden');
+            }
+
+            function closeInvoice() {
+                document.getElementById('invoiceOverlay').classList.add('hidden');
+            }
+
+            function cancelBooking() {
+                if (confirm('Bạn có chắc chắn muốn hủy lượt đặt lịch này không?')) {
+                    selectedServices = [];
+                    updateSummary();
+                    document.querySelectorAll('.service-card.selected').forEach(card => card.classList.remove('selected'));
+                    closeInvoice();
+                }
+            }
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,509 @@
+{% extends 'spa_app/manage.html' %}
+{% load l10n %}
+
+{% block management_content %}
+<div class="invoice-editor-wrapper">
+    <!-- Catalog Side -->
+    <div class="catalog-section">
+        <h3>Dịch vụ Spa</h3>
+        <div class="category-list">
+            {% for category in categories %}
+            <div class="category-group">
+                <h4>{{ category.name }}</h4>
+                <div class="service-grid">
+                    {% for service in category.services.all %}
+                    <div class="service-card" data-id="{{ service.id }}"
+                        onclick="addService(this, '{{ service.id }}', '{{ service.name|escapejs }}', '{{ service.price|unlocalize }}')">
+                        <div class="service-info">
+                            <span class="service-name">{{ service.name }}</span>
+                            <span class="service-price">{{ service.price|floatformat:0 }} VNĐ</span>
+                        </div>
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Invoice Side -->
+    <div class="invoice-section">
+        <form id="editBookingForm" method="POST">
+            {% csrf_token %}
+            <div class="invoice-paper" id="invoicePaper">
+                <div class="invoice-header">
+                    <div class="spa-brand">
+                        <div class="brand-circle">Mộc Spa</div>
+                        <div>
+                            <h2>HÓA ĐƠN DỊCH VỤ</h2>
+                            <p>Mã: <strong>#{{ booking.id }}</strong></p>
+                        </div>
+                    </div>
+                    <div class="invoice-date">
+                        {{ booking.created_at|date:"d/m/Y H:i" }}
+                        {% if booking.updated_at %}
+                        <div class="edit-timestamp">
+                            <i class="fas fa-edit"></i> Sửa lúc: {{ booking.updated_at|date:"d/m/Y H:i" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="invoice-details">
+                    <div class="detail-row">
+                        <label>Người đặt:</label>
+                        <input type="text" name="booker_name" value="{{ booking.booker_name }}" class="editable-input"
+                            required>
+                    </div>
+                    <div class="detail-row">
+                        <label>Khách hàng:</label>
+                        <input type="text" name="customer_name" value="{{ booking.customer_name }}"
+                            class="editable-input" required>
+                    </div>
+                </div>
+
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Dịch vụ</th>
+                            <th style="text-align: right;">Đơn giá</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoiceItems">
+                        <!-- JS renders items here -->
+                    </tbody>
+                </table>
+
+                <div class="invoice-footer">
+                    <div class="footer-row">
+                        <div class="product-info">
+                            <label>Sản phẩm khác:</label>
+                            <input type="text" name="product_name" id="product_name"
+                                value="{{ booking.product_name|default:'' }}" placeholder="Tên sản phẩm..."
+                                class="editable-input mini">
+                        </div>
+                        <div class="product-price">
+                            <input type="number" name="product_price" id="product_price"
+                                value="{{ booking.product_price|unlocalize }}" class="editable-input mini"
+                                style="text-align: right; width: 120px;" oninput="recalculate()">
+                            <span>VNĐ</span>
+                        </div>
+                    </div>
+
+                    <div class="summary-box">
+                        <div class="summary-row">
+                            <span>Giảm giá DV:</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="number" name="discount_percent" id="discount_percent"
+                                    value="{{ booking.discount_percent|unlocalize }}" class="editable-input mini"
+                                    style="width: 50px; text-align: right;" oninput="recalculate()">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="summary-row">
+                            <span>Giảm giá SP:</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="number" name="product_discount_percent" id="product_discount_percent"
+                                    value="{{ booking.product_discount_percent|unlocalize }}"
+                                    class="editable-input mini" style="width: 50px; text-align: right;"
+                                    oninput="recalculate()">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="summary-row total">
+                            <span>TỔNG TIẾN:</span>
+                            <span id="displayTotal">0 VNĐ</span>
+                        </div>
+                    </div>
+
+                    <div class="payment-status">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="is_paid" name="is_paid" {{ booking.is_paid|yesno:"checked," }}
+                                onchange="recalculate()">
+                            <label for="is_paid">Đã thanh toán</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden inputs for services -->
+            <div id="hiddenInputs"></div>
+
+            <div class="action-footer">
+                <a href="{% url 'booking_history' %}" class="btn-cancel">Hủy bỏ</a>
+                <button type="submit" class="btn-save-invoice">Cập nhật & Lưu hóa đơn</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .invoice-editor-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1.2fr;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* Catalog Styling */
+    .catalog-section {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 15px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .catalog-section h3 {
+        margin-bottom: 1.5rem;
+        color: var(--primary-color);
+    }
+
+    .category-group h4 {
+        margin: 1rem 0 0.5rem;
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+
+    .service-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .service-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: 0.2s;
+        border: 1px solid #eee;
+    }
+
+    .service-card:hover {
+        transform: scale(1.02);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .service-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .service-price {
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .service-card i {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+    }
+
+    /* Invoice Paper Styling */
+    .invoice-paper {
+        background: white;
+        padding: 3rem;
+        border-radius: 5px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        min-height: 600px;
+        position: relative;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #333;
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .spa-brand {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .brand-circle {
+        background: #333;
+        color: white;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .spa-brand h2 {
+        margin: 0;
+        font-size: 1.4rem;
+        letter-spacing: 2px;
+    }
+
+    .invoice-date {
+        color: #666;
+        font-size: 0.9rem;
+        text-align: right;
+    }
+
+    .edit-timestamp {
+        color: #f39c12;
+        font-size: 0.75rem;
+        margin-top: 5px;
+        font-weight: 600;
+    }
+
+    .invoice-details {
+        margin-bottom: 2rem;
+    }
+
+    .detail-row {
+        display: flex;
+        border-bottom: 1px solid #eee;
+        padding: 0.5rem 0;
+        align-items: center;
+    }
+
+    .detail-row label {
+        width: 120px;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .editable-input {
+        border: none;
+        background: transparent;
+        padding: 0.3rem 0.5rem;
+        font-size: 1rem;
+        width: 100%;
+        border-bottom: 1px dashed transparent;
+    }
+
+    .editable-input:focus {
+        outline: none;
+        border-bottom-color: #333;
+        background: #fffde7;
+    }
+
+    .editable-input.mini {
+        font-size: 0.9rem;
+    }
+
+    .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+
+    .invoice-table th {
+        text-align: left;
+        padding: 0.8rem;
+        background: #f8f9fa;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .invoice-table td {
+        padding: 1rem 0.8rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .btn-remove {
+        color: #e74c3c;
+        cursor: pointer;
+        background: none;
+        border: none;
+        font-size: 1rem;
+    }
+
+    .invoice-footer {
+        border-top: 2px solid #333;
+        padding-top: 1.5rem;
+    }
+
+    .footer-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+
+    .summary-box {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 5px;
+        margin: 1.5rem 0;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .summary-row.total {
+        font-size: 1.4rem;
+        color: #333;
+        margin-top: 1rem;
+        border-top: 1px solid #ddd;
+        padding-top: 1rem;
+    }
+
+    .payment-status {
+        text-align: center;
+    }
+
+    .action-footer {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1.5rem;
+    }
+
+    .btn-save-invoice {
+        background: #333;
+        color: white;
+        border: none;
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .btn-save-invoice:hover {
+        background: #000;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-cancel {
+        color: #666;
+        text-decoration: none;
+        align-self: center;
+        font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+        .invoice-editor-wrapper {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script id="booking-data" type="application/json">
+    [
+        {% for s in booking.services.all %}
+        {
+            "id": {{ s.id }},
+            "name": "{{ s.name|escapejs }}",
+            "price": {{ s.price|unlocalize }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+</script>
+
+<script>
+    let selectedServices = [];
+
+    // Initialize with existing services
+    document.addEventListener('DOMContentLoaded', () => {
+        const dataElement = document.getElementById('booking-data');
+        if (dataElement) {
+            const initialServices = JSON.parse(dataElement.textContent);
+            initialServices.forEach(s => {
+                selectedServices.push({
+                    id: s.id,
+                    name: s.name,
+                    price: parseFloat(s.price) || 0
+                });
+
+                // Find and mark as selected in catalog
+                const card = document.querySelector(".service-card[data-id='" + s.id + "']");
+                if (card) card.classList.add('selected');
+            });
+        }
+        renderInvoice();
+    });
+
+    function addService(el, id, name, price) {
+        id = parseInt(id);
+        price = parseFloat(price) || 0;
+
+        const index = selectedServices.findIndex(s => s.id === id);
+        if (index > -1) {
+            selectedServices.splice(index, 1);
+            if (el) el.classList.remove('selected');
+        } else {
+            selectedServices.push({ id, name, price });
+            if (el) el.classList.add('selected');
+        }
+        renderInvoice();
+    }
+
+    function removeService(index) {
+        const item = selectedServices[index];
+        if (item) {
+            // Also unselect in catalog if exists
+            const card = document.querySelector(".service-card[data-id='" + item.id + "']");
+            if (card) card.classList.remove('selected');
+        }
+
+        selectedServices.splice(index, 1);
+        renderInvoice();
+    }
+
+    function renderInvoice() {
+        const tbody = document.getElementById('invoiceItems');
+        const hiddenArea = document.getElementById('hiddenInputs');
+
+        tbody.innerHTML = '';
+        hiddenArea.innerHTML = '';
+
+        selectedServices.forEach((s, index) => {
+            // Render visible row
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight: 600;">${s.name}</td>
+                    <td style="text-align: right;">${s.price.toLocaleString('vi-VN')} VNĐ</td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn-remove" onclick="removeService(${index})">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            // Render hidden input for POST
+            hiddenArea.innerHTML += '<input type="hidden" name="service_ids" value="' + s.id + '">';
+        });
+
+        recalculate();
+    }
+
+    function recalculate() {
+        const basePrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+        const discountPercent = parseFloat(document.getElementById('discount_percent').value) || 0;
+        const productPrice = parseFloat(document.getElementById('product_price').value) || 0;
+        const productDiscountPercent = parseFloat(document.getElementById('product_discount_percent').value) || 0;
+
+        const discountAmount = basePrice * (discountPercent / 100);
+        const productDiscountAmount = productPrice * (productDiscountPercent / 100);
+        const finalTotal = (basePrice - discountAmount) + (productPrice - productDiscountAmount);
+
+        document.getElementById('displayTotal').innerText = finalTotal.toLocaleString('vi-VN') + " VNĐ";
+    }
+</script>
+{% endblock %}

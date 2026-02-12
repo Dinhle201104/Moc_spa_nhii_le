@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Mộc Spa</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'spa_app/css/styles.css' %}">
+    <style>
+        .form-container {
+            padding: 8rem 5% 5rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-family: inherit;
+        }
+
+        .btn-submit {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn-submit:hover {
+            background: #6d4a2f;
+        }
+
+        .btn-cancel {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="logo-container">
+            <a href="{% url 'index' %}" style="text-decoration: none;">
+                <div class="logo-circle">
+                    <span>Mộc Spa</span>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <div class="form-container">
+        <div class="form-card">
+            <h1>{{ title }}</h1>
+            <form method="POST" enctype="multipart/form-data" style="margin-top: 2rem;">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div style="color: red; font-size: 0.8rem;">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn-submit">Lưu thay đổi</button>
+            </form>
+            <a href="{% url 'manage_services' %}" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const nameInput = document.getElementById('id_name');
+            const descInput = document.getElementById('id_description');
+
+            if (nameInput) {
+                nameInput.addEventListener('input', function (e) {
+                    let value = e.target.value;
+                    // Title Case: Capitalize first letter of each word
+                    e.target.value = value.replace(/(^\w|\s\w)/g, m => m.toUpperCase());
+                });
+            }
+
+            if (descInput) {
+                descInput.addEventListener('input', function (e) {
+                    let value = e.target.value;
+                    if (value.length > 0) {
+                        // Sentence Case: Only capitalize the very first letter
+                        e.target.value = value.charAt(0).toUpperCase() + value.slice(1);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

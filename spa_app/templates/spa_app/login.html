@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Mộc Spa</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'spa_app/css/styles.css' %}">
+    <style>
+        .login-container {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 3rem;
+            border-radius: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+        }
+
+        .login-card h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+        }
+
+        .btn-login {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s, background 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn-login:hover {
+            background: #a04e38;
+            transform: translateY(-2px);
+        }
+
+        .errorlist {
+            color: #f44336;
+            list-style: none;
+            padding: 0;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h2>Đăng nhập</h2>
+            <form method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                <ul class="errorlist">
+                    <li>Tên đăng nhập hoặc mật khẩu không đúng.</li>
+                </ul>
+                {% endif %}
+                <div class="form-group">
+                    <label for="id_username">Tên tài khoản</label>
+                    <input type="text" name="username" id="id_username" required placeholder="Nhập tên tài khoản">
+                </div>
+                <div class="form-group">
+                    <label for="id_password">Mật khẩu</label>
+                    <input type="password" name="password" id="id_password" required placeholder="Nhập mật khẩu">
+                </div>
+                <button type="submit" class="btn-login">Vào trang quản lý</button>
+            </form>
+            <div style="margin-top: 2rem;">
+                <a href="{% url 'index' %}"
+                    style="color: var(--primary-color); text-decoration: none; font-size: 0.9rem;">← Quay lại trang
+                    chủ</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

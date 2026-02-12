@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý - Mộc Spa</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'spa_app/css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .manage-container {
+            padding: 8rem 5% 5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            color: var(--primary-color);
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-add {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 2rem;
+        }
+
+        .btn-edit {
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-delete {
+            color: #F44336;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body class="">
+    <header class="navbar">
+        <div class="logo-container">
+            <a href="javascript:void(0)" onclick="handleLogout()" style="text-decoration: none;">
+                <div class="logo-circle">
+                    <span>Mộc Spa</span>
+                </div>
+            </a>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="javascript:void(0)" onclick="handleLogout()">Trang chủ</a></li>
+                <li><a href="{% url 'manage_services' %}">Dịch vụ</a></li>
+                <li><a href="{% url 'booking_history' %}">Lịch sử đơn</a></li>
+                <li><a href="javascript:void(0)" onclick="handleLogout()" style="color: #F44336;">Đăng xuất</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <form id="logout-form" action="{% url 'logout' %}" method="POST" style="display: none;">
+        {% csrf_token %}
+    </form>
+
+    <script>
+        function handleLogout() {
+            document.getElementById('logout-form').submit();
+        }
+    </script>
+
+    <div class="manage-container">
+        {% block management_content %}
+        <div
+            style="background: #E3F2FD; padding: 1rem; border-radius: 10px; margin-bottom: 2rem; border-left: 5px solid #2196F3;">
+            <p><strong>💡 Hướng dẫn tải Mã QR:</strong> Trong bảng "Quản lý thông tin liên hệ" bên dưới, nhấn nút
+                <strong>"Sửa"</strong> ở dòng thông tin của bạn, sau đó chọn ảnh mã QR của ngân hàng để khách quét thanh
+                toán.
+            </p>
+        </div>
+
+        <div class="header-flex">
+            <h1>Quản lý dịch vụ</h1>
+            <a href="{% url 'add_service' %}" class="btn-add">+ Thêm dịch vụ</a>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên dịch vụ</th>
+                        <th>Nhóm</th>
+                        <th>Giá tiền</th>
+                        <th>Thời lượng</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service in services %}
+                    <tr>
+                        <td>{{ service.name }}</td>
+                        <td>{{ service.category.name }}</td>
+                        <td>{{ service.price|floatformat:0 }} VNĐ</td>
+                        <td>{{ service.duration }} phút</td>
+                        <td class="actions">
+                            <a href="{% url 'edit_service' service.pk %}" class="btn-edit">Sửa</a>
+                            <a href="{% url 'delete_service' service.pk %}" class="btn-delete">Xóa</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Chưa có dịch vụ nào.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="header-flex" style="margin-top: 4rem;">
+            <h1>Quản lý thông tin liên hệ & Mã QR</h1>
+            <a href="{% url 'add_contact' %}" class="btn-add">+ Thêm thông tin</a>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Điện thoại</th>
+                        <th>Email</th>
+                        <th>Facebook</th>
+                        <th>Mã QR</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact_info in contacts %}
+                    <tr>
+                        <td>{{ contact_info.phone }}</td>
+                        <td>{{ contact_info.email }}</td>
+                        <td>{{ contact_info.facebook_name }}</td>
+                        <td>
+                            {% if contact_info.qr_code %}
+                            <span style="color: #4CAF50;">✅ Đã có</span>
+                            {% else %}
+                            <span style="color: #F44336;">❌ Chưa có</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            <a href="{% url 'edit_contact' contact_info.pk %}" class="btn-edit">Sửa</a>
+                            <a href="{% url 'delete_contact' contact_info.pk %}" class="btn-delete">Xóa</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Chưa có thông tin liên hệ nào.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endblock %}
+        <div style="margin-top: 2rem;">
+            <a href="javascript:void(0)" onclick="handleLogout()"
+                style="color: var(--primary-color); text-decoration: none;">← Quay lại trang chủ (Đăng xuất)</a>
+        </div>
+    </div>
+</body>
+
+</html>

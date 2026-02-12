@@ -1,0 +1,206 @@
+{% extends 'spa_app/manage.html' %}
+
+{% block management_content %}
+<div class="header-flex">
+    <h1>Lịch sử đơn hàng</h1>
+    <a href="{% url 'clear_booking_history' %}" class="btn-delete-all">
+        <i class="fas fa-trash"></i> Xóa tất cả
+    </a>
+</div>
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Ngày giờ</th>
+                    <th>Người đặt</th>
+                    <th>Khách hàng</th>
+                    <th>Dịch vụ</th>
+                    <th>Sản phẩm/Mỹ phẩm</th>
+                    <th>Tổng tiền</th>
+                    <th>Giảm giá</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td><strong>#{{ booking.id }}</strong></td>
+                    <td>
+                        {{ booking.created_at|date:"H:i d/m/Y" }}
+                        {% if booking.updated_at %}
+                        <div class="edit-notif">
+                            <i class="fas fa-history"></i> Sửa lúc: {{ booking.updated_at|date:"H:i d/m/Y" }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ booking.booker_name }}</td>
+                    <td>{{ booking.customer_name }}</td>
+                    <td>
+                        <div class="service-list-cell">
+                            {% for service in booking.services.all %}
+                            <div class="service-item">- {{ service.name }}</div>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if booking.product_name %}
+                        <div class="product-cell">
+                            <span class="product-name">{{ booking.product_name }}</span>
+                            <small class="product-price">({{ booking.product_price|floatformat:0 }} VNĐ)</small>
+                        </div>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td><strong class="total-price">{{ booking.total_price|floatformat:0 }} VNĐ</strong></td>
+                    <td>
+                        <div class="discount-cell">
+                            <div>DV: {{ booking.discount_percent|floatformat:0 }}%</div>
+                            {% if booking.product_discount_percent > 0 %}
+                            <div>SP: {{ booking.product_discount_percent|floatformat:0 }}%</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if booking.is_paid %}
+                        <span class="status-badge status-paid">Đã thanh toán</span>
+                        <div class="payment-method-badge">
+                            <span class="method-text">{{ booking.get_payment_method_display }}</span>
+                        </div>
+                        {% else %}
+                        <span class="status-badge status-unpaid">Chưa thanh toán</span>
+                        {% endif %}
+                    </td>
+                    <td class="action-cell">
+                        <a href="{% url 'edit_booking' booking.pk %}" class="btn-edit-action">
+                            <i class="fas fa-edit"></i> Sửa
+                        </a>
+                        <a href="{% url 'delete_booking' booking.pk %}" class="btn-delete-action">
+                            <i class="fas fa-trash-alt"></i> Xóa
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="empty-message">Chưa có đơn hàng nào được thực hiện.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .btn-delete-all {
+        background: #F44336;
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .btn-delete-all:hover {
+        background: #d32f2f;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(244, 67, 54, 0.3);
+    }
+
+    .service-list-cell {
+        max-width: 250px;
+        font-size: 0.9rem;
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-paid {
+        background: #E8F5E9;
+        color: #2E7D32;
+    }
+
+    .status-unpaid {
+        background: #FFEBEE;
+        color: #C62828;
+    }
+
+    .payment-method-badge {
+        margin-top: 0.3rem;
+    }
+
+    .method-text {
+        background: #F5F5F5;
+        color: #666;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+    }
+
+    .action-cell {
+        white-space: nowrap;
+    }
+
+    .edit-notif {
+        font-size: 0.75rem;
+        color: #f39c12;
+        margin-top: 4px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .btn-edit-action {
+        text-decoration: none;
+        color: #3498db;
+        margin-right: 15px;
+        font-weight: 600;
+    }
+
+    .btn-delete-action {
+        text-decoration: none;
+        color: #e74c3c;
+        font-weight: 600;
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 3rem !important;
+        color: #888;
+    }
+
+    .product-cell {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-price {
+        color: #888;
+    }
+
+    .discount-cell {
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    th {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}

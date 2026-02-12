@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận xóa - Mộc Spa</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'spa_app/css/styles.css' %}">
+    <style>
+        .confirm-container {
+            padding: 10rem 5% 5rem;
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .confirm-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-delete {
+            background: #F44336;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+            margin-top: 2rem;
+        }
+
+        .btn-cancel {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="confirm-container">
+        <div class="confirm-card">
+            <h1>Xác nhận xóa</h1>
+            <p style="margin-top: 1rem;">
+                {% if is_contact %}
+                Bạn có chắc chắn muốn xóa thông tin liên hệ <strong>"{{ contact.phone }}"</strong> không?
+                {% else %}
+                Bạn có chắc chắn muốn xóa dịch vụ <strong>"{{ service.name }}"</strong> không?
+                {% endif %}
+                Hành động này không thể hoàn tác.
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-delete">Xác nhận xóa</button>
+            </form>
+            <a href="{% url 'manage_services' %}" class="btn-cancel">Hủy bỏ</a>
+        </div>
+    </div>
+</body>
+
+</html>
